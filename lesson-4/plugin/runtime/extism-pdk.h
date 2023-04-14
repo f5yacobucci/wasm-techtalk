@@ -1,0 +1,1 @@
+/home/matt/dev/go/pkg/mod/github.com/extism/go-pdk@v0.0.0-20230119214914-65bffbeb3e64/extism-pdk.h
