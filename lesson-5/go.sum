@@ -1,0 +1,8 @@
+github.com/extism/extism v0.2.0 h1:9fsjQI7xNqSwooN1duuPpvmh2iccuZIj606mUlRszA0=
+github.com/extism/extism v0.2.0/go.mod h1:d5IwHeVomfV6LLHCtBVXf1IaB0YlDsjfWi8cZmqJqUI=
+github.com/extism/extism v0.3.0 h1:UJW1tmNyizvEBjgB7QoUxLGwYwhARww84vIq9w48XL4=
+github.com/extism/extism v0.3.0/go.mod h1:d5IwHeVomfV6LLHCtBVXf1IaB0YlDsjfWi8cZmqJqUI=
+github.com/extism/go-pdk v0.0.0-20230119214914-65bffbeb3e64 h1:IfR1k741q+yQLvv5sLShCkvt3FgKU4wQVJfp7hhb/iY=
+github.com/extism/go-pdk v0.0.0-20230119214914-65bffbeb3e64/go.mod h1:1wdiAoG8306g4WK+6laBrS+75089/0V4XRVTllt8b5U=
+github.com/valyala/fastjson v1.6.4 h1:uAUNq9Z6ymTgGhcm0UynUAB6tlbakBrz6CQFax3BXVQ=
+github.com/valyala/fastjson v1.6.4/go.mod h1:CLCAqky6SMuOcxStkYQvblddUtoRxhYMGLrsQns1aXY=
