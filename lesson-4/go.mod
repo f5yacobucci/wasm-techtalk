@@ -1,10 +1,8 @@
-module example.com/extismdemo
+module example.com/fibonaccidemo
 
 go 1.18
 
 require (
-	github.com/extism/extism v0.2.0
-	github.com/extism/go-pdk v0.0.0-20230119214914-65bffbeb3e64
+	github.com/bytecodealliance/wasmtime-go/v7 v7.0.0
+	github.com/wasmerio/wasmer-go v1.0.4
 )
-
-require github.com/valyala/fastjson v1.6.4 // indirect
