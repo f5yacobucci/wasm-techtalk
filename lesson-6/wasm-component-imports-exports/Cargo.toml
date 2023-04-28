@@ -1,0 +1,12 @@
+[package]
+name = "wasm-component-imports-exports"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.70"
+rand = "0.8.5"
+signal-hook = "0.3.15"
+wasmtime = { git = "https://github.com/bytecodealliance/wasmtime", rev = "299131ae2d6655c49138bfab2c4469650763ef3b", features = ["component-model"] }
