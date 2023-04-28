@@ -1,0 +1,42 @@
+interface types {
+  record metadata {
+    topic:      string,
+  }
+
+  record message {
+    meta: metadata,
+    data: u8,
+  }
+
+  record response {
+    status: responsecode,
+    data: string,
+  }
+
+  enum responsecode {
+    processed,
+    error,
+  }
+
+  enum errno {
+    subscriber-norecord,
+    subscriber-noconfig,
+    subscribe-no-id,
+    subscribe-notopic,
+  }
+}
+
+interface pubsub-api {
+  use self.types.{metadata, message, errno}
+
+  topics:    func() -> result<list<string>, errno>
+  subscribe: func(name: string, topic: string) -> result<_, errno>
+}
+
+default world pubsub {
+  import pubsub: self.pubsub-api
+
+  use self.types.{metadata, message, errno, response}
+  export init:    func(id: string, config: string) -> result<_, errno>
+  export process: func(id: string, msg: message) -> result<response, errno>
+}

@@ -1,0 +1,5 @@
+default world math {
+  export add: func(lhs: s32, rhs: s32) -> s32
+  export sub: func(lhs: s32, rhs: s32) -> s32
+  export square: func(root: s32) -> s32
+}
