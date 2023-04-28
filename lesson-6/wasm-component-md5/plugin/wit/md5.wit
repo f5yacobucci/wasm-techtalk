@@ -1,0 +1,18 @@
+interface md5hash {
+  record context {
+    bytes: u64,
+    a: u32,
+    b: u32,
+    c: u32,
+    d: u32,
+    buffer: list<u8>,
+  }
+  
+  init: func() -> context
+  update: func(ctx: context, msg: list<u8>) -> s32
+  final: func(ctx: context) -> list<u8>
+}
+
+default world md5 {
+  export md5: self.md5hash
+}
