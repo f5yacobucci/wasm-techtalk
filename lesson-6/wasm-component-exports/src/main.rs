@@ -13,7 +13,7 @@ fn main() -> wasmtime::Result<()> {
     let mut config = Config::new();
     config.wasm_component_model(true);
     let engine = Engine::new(&config)?;
-    let component = Component::from_file(&engine, "./plugin/mathguest.component.wasm")?;
+    let component = Component::from_file(&engine, "./plugin/math.component.wasm")?;
 
     let linker = Linker::new(&engine);
     let mut store = Store::new(&engine, State {});
