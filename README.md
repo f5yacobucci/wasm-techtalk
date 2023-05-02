@@ -137,3 +137,15 @@ cd ..
 cargo run
 # ctrl-c to exit runtime loop
 ```
+
+wasm-component-md5:
+
+Use a Go implementation of the md5 algorithm and call from WASI async host. Only guest imports and no `borrow` or `own` resource support. A Context is passed in and the updated Context is returned to be used for subsequent calls. Requires the preview2-prototype and therefore has pinned its dependencies to git SHAs. This code will rot as the API and SDK matures.
+
+To run:
+```bash
+cd plugin
+bash BUILD
+cd ..
+cargo run
+```

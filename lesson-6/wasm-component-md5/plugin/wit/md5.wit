@@ -7,10 +7,14 @@ interface md5hash {
     d: u32,
     buffer: list<u8>,
   }
+
+  enum errno {
+    error,
+  }
   
-  init: func() -> context
-  update: func(ctx: context, msg: list<u8>) -> s32
-  final: func(ctx: context) -> list<u8>
+  init: func() -> result<context, errno>
+  update: func(ctx: context, msg: list<u8>) -> result<context, errno>
+  hash: func(ctx: context) -> result<list<u8>, errno>
 }
 
 default world md5 {

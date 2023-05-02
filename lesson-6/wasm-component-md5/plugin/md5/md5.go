@@ -6,6 +6,24 @@ import "C"
 import "unsafe"
 
 // md5
+type Md5ErrnoKind int
+
+const (
+Md5ErrnoKindError Md5ErrnoKind = iota
+)
+
+type Md5Errno struct {
+  kind Md5ErrnoKind
+}
+
+func (n Md5Errno) Kind() Md5ErrnoKind {
+  return n.kind
+}
+
+func Md5ErrnoError() Md5Errno{
+  return Md5Errno{kind: Md5ErrnoKindError}
+}
+
 type Md5Context struct {
   Bytes uint64
   A uint32
@@ -20,45 +38,58 @@ func SetMd5(i Md5) {
   md5 = i
 }
 type Md5 interface {
-  Init() Md5Context 
-  Update(ctx Md5Context, msg []uint8) int32 
-  Final(ctx Md5Context) []uint8 
+  Init() Result[Md5Context, Md5Errno] 
+  Update(ctx Md5Context, msg []uint8) Result[Md5Context, Md5Errno] 
+  Hash(ctx Md5Context) Result[[]uint8, Md5Errno] 
 }
 //export md5_init
-func Md5Init(ret *C.md5hash_context_t) {
+func Md5Init(ret *C.md5_result_context_errno_t) {
   result := md5.Init()
-  var lower_result C.md5hash_context_t
-  lower_result_bytes := C.uint64_t(result.Bytes)
-  lower_result.bytes = lower_result_bytes
-  lower_result_a := C.uint32_t(result.A)
-  lower_result.a = lower_result_a
-  lower_result_b := C.uint32_t(result.B)
-  lower_result.b = lower_result_b
-  lower_result_c := C.uint32_t(result.C)
-  lower_result.c = lower_result_c
-  lower_result_d := C.uint32_t(result.D)
-  lower_result.d = lower_result_d
-  var lower_result_buffer C.md5_list_u8_t
-  if len(result.Buffer) == 0 {
-    lower_result_buffer.ptr = nil
-    lower_result_buffer.len = 0
-  } else {
-    var empty_lower_result_buffer C.uint8_t
-    lower_result_buffer.ptr = (*C.uint8_t)(C.malloc(C.size_t(len(result.Buffer)) * C.size_t(unsafe.Sizeof(empty_lower_result_buffer))))
-    lower_result_buffer.len = C.size_t(len(result.Buffer))
-    for lower_result_buffer_i := range result.Buffer {
-      lower_result_buffer_ptr := (*C.uint8_t)(unsafe.Pointer(uintptr(unsafe.Pointer(lower_result_buffer.ptr)) +
-      uintptr(lower_result_buffer_i)*unsafe.Sizeof(empty_lower_result_buffer)))
-      lower_result_buffer_ptr_value := C.uint8_t(result.Buffer[lower_result_buffer_i])
-      *lower_result_buffer_ptr = lower_result_buffer_ptr_value
+  var lower_result C.md5_result_context_errno_t
+  lower_result.is_err = result.IsErr()
+  if result.IsOk() {
+    lower_result_ptr := (*C.md5hash_context_t)(unsafe.Pointer(&lower_result.val))
+    var lower_result_val C.md5hash_context_t
+    lower_result_val_bytes := C.uint64_t(result.Unwrap().Bytes)
+    lower_result_val.bytes = lower_result_val_bytes
+    lower_result_val_a := C.uint32_t(result.Unwrap().A)
+    lower_result_val.a = lower_result_val_a
+    lower_result_val_b := C.uint32_t(result.Unwrap().B)
+    lower_result_val.b = lower_result_val_b
+    lower_result_val_c := C.uint32_t(result.Unwrap().C)
+    lower_result_val.c = lower_result_val_c
+    lower_result_val_d := C.uint32_t(result.Unwrap().D)
+    lower_result_val.d = lower_result_val_d
+    var lower_result_val_buffer C.md5_list_u8_t
+    if len(result.Unwrap().Buffer) == 0 {
+      lower_result_val_buffer.ptr = nil
+      lower_result_val_buffer.len = 0
+    } else {
+      var empty_lower_result_val_buffer C.uint8_t
+      lower_result_val_buffer.ptr = (*C.uint8_t)(C.malloc(C.size_t(len(result.Unwrap().Buffer)) * C.size_t(unsafe.Sizeof(empty_lower_result_val_buffer))))
+      lower_result_val_buffer.len = C.size_t(len(result.Unwrap().Buffer))
+      for lower_result_val_buffer_i := range result.Unwrap().Buffer {
+        lower_result_val_buffer_ptr := (*C.uint8_t)(unsafe.Pointer(uintptr(unsafe.Pointer(lower_result_val_buffer.ptr)) +
+        uintptr(lower_result_val_buffer_i)*unsafe.Sizeof(empty_lower_result_val_buffer)))
+        lower_result_val_buffer_ptr_value := C.uint8_t(result.Unwrap().Buffer[lower_result_val_buffer_i])
+        *lower_result_val_buffer_ptr = lower_result_val_buffer_ptr_value
+      }
     }
+    lower_result_val.buffer = lower_result_val_buffer
+    *lower_result_ptr = lower_result_val
+  } else {
+    lower_result_ptr := (*C.md5hash_errno_t)(unsafe.Pointer(&lower_result.val))
+    var lower_result_val C.md5hash_errno_t
+    if result.UnwrapErr().Kind() == Md5ErrnoKindError {
+      lower_result_val = 0
+    }
+    *lower_result_ptr = lower_result_val
   }
-  lower_result.buffer = lower_result_buffer
   *ret = lower_result
   
 }
 //export md5_update
-func Md5Update(ctx *C.md5hash_context_t, msg *C.md5_list_u8_t) C.int32_t {
+func Md5Update(ctx *C.md5hash_context_t, msg *C.md5_list_u8_t, ret *C.md5_result_context_errno_t) {
   defer C.md5hash_context_free(ctx)
   defer C.md5_list_u8_free(msg)
   var lift_ctx Md5Context
@@ -103,12 +134,51 @@ func Md5Update(ctx *C.md5hash_context_t, msg *C.md5_list_u8_t) C.int32_t {
     }
   }
   result := md5.Update(lift_ctx, lift_msg)
-  lower_result := C.int32_t(result)
-  return lower_result
+  var lower_result C.md5_result_context_errno_t
+  lower_result.is_err = result.IsErr()
+  if result.IsOk() {
+    lower_result_ptr := (*C.md5hash_context_t)(unsafe.Pointer(&lower_result.val))
+    var lower_result_val C.md5hash_context_t
+    lower_result_val_bytes := C.uint64_t(result.Unwrap().Bytes)
+    lower_result_val.bytes = lower_result_val_bytes
+    lower_result_val_a := C.uint32_t(result.Unwrap().A)
+    lower_result_val.a = lower_result_val_a
+    lower_result_val_b := C.uint32_t(result.Unwrap().B)
+    lower_result_val.b = lower_result_val_b
+    lower_result_val_c := C.uint32_t(result.Unwrap().C)
+    lower_result_val.c = lower_result_val_c
+    lower_result_val_d := C.uint32_t(result.Unwrap().D)
+    lower_result_val.d = lower_result_val_d
+    var lower_result_val_buffer C.md5_list_u8_t
+    if len(result.Unwrap().Buffer) == 0 {
+      lower_result_val_buffer.ptr = nil
+      lower_result_val_buffer.len = 0
+    } else {
+      var empty_lower_result_val_buffer C.uint8_t
+      lower_result_val_buffer.ptr = (*C.uint8_t)(C.malloc(C.size_t(len(result.Unwrap().Buffer)) * C.size_t(unsafe.Sizeof(empty_lower_result_val_buffer))))
+      lower_result_val_buffer.len = C.size_t(len(result.Unwrap().Buffer))
+      for lower_result_val_buffer_i := range result.Unwrap().Buffer {
+        lower_result_val_buffer_ptr := (*C.uint8_t)(unsafe.Pointer(uintptr(unsafe.Pointer(lower_result_val_buffer.ptr)) +
+        uintptr(lower_result_val_buffer_i)*unsafe.Sizeof(empty_lower_result_val_buffer)))
+        lower_result_val_buffer_ptr_value := C.uint8_t(result.Unwrap().Buffer[lower_result_val_buffer_i])
+        *lower_result_val_buffer_ptr = lower_result_val_buffer_ptr_value
+      }
+    }
+    lower_result_val.buffer = lower_result_val_buffer
+    *lower_result_ptr = lower_result_val
+  } else {
+    lower_result_ptr := (*C.md5hash_errno_t)(unsafe.Pointer(&lower_result.val))
+    var lower_result_val C.md5hash_errno_t
+    if result.UnwrapErr().Kind() == Md5ErrnoKindError {
+      lower_result_val = 0
+    }
+    *lower_result_ptr = lower_result_val
+  }
+  *ret = lower_result
   
 }
-//export md5_final
-func Md5Final(ctx *C.md5hash_context_t, ret *C.md5_list_u8_t) {
+//export md5_hash
+func Md5Hash(ctx *C.md5hash_context_t, ret *C.md5_result_list_u8_errno_t) {
   defer C.md5hash_context_free(ctx)
   var lift_ctx Md5Context
   var lift_ctx_Bytes uint64
@@ -139,21 +209,34 @@ func Md5Final(ctx *C.md5hash_context_t, ret *C.md5_list_u8_t) {
     }
   }
   lift_ctx.Buffer = lift_ctx_Buffer
-  result := md5.Final(lift_ctx)
-  var lower_result C.md5_list_u8_t
-  if len(result) == 0 {
-    lower_result.ptr = nil
-    lower_result.len = 0
-  } else {
-    var empty_lower_result C.uint8_t
-    lower_result.ptr = (*C.uint8_t)(C.malloc(C.size_t(len(result)) * C.size_t(unsafe.Sizeof(empty_lower_result))))
-    lower_result.len = C.size_t(len(result))
-    for lower_result_i := range result {
-      lower_result_ptr := (*C.uint8_t)(unsafe.Pointer(uintptr(unsafe.Pointer(lower_result.ptr)) +
-      uintptr(lower_result_i)*unsafe.Sizeof(empty_lower_result)))
-      lower_result_ptr_value := C.uint8_t(result[lower_result_i])
-      *lower_result_ptr = lower_result_ptr_value
+  result := md5.Hash(lift_ctx)
+  var lower_result C.md5_result_list_u8_errno_t
+  lower_result.is_err = result.IsErr()
+  if result.IsOk() {
+    lower_result_ptr := (*C.md5_list_u8_t)(unsafe.Pointer(&lower_result.val))
+    var lower_result_val C.md5_list_u8_t
+    if len(result.Unwrap()) == 0 {
+      lower_result_val.ptr = nil
+      lower_result_val.len = 0
+    } else {
+      var empty_lower_result_val C.uint8_t
+      lower_result_val.ptr = (*C.uint8_t)(C.malloc(C.size_t(len(result.Unwrap())) * C.size_t(unsafe.Sizeof(empty_lower_result_val))))
+      lower_result_val.len = C.size_t(len(result.Unwrap()))
+      for lower_result_val_i := range result.Unwrap() {
+        lower_result_val_ptr := (*C.uint8_t)(unsafe.Pointer(uintptr(unsafe.Pointer(lower_result_val.ptr)) +
+        uintptr(lower_result_val_i)*unsafe.Sizeof(empty_lower_result_val)))
+        lower_result_val_ptr_value := C.uint8_t(result.Unwrap()[lower_result_val_i])
+        *lower_result_val_ptr = lower_result_val_ptr_value
+      }
     }
+    *lower_result_ptr = lower_result_val
+  } else {
+    lower_result_ptr := (*C.md5hash_errno_t)(unsafe.Pointer(&lower_result.val))
+    var lower_result_val C.md5hash_errno_t
+    if result.UnwrapErr().Kind() == Md5ErrnoKindError {
+      lower_result_val = 0
+    }
+    *lower_result_ptr = lower_result_val
   }
   *ret = lower_result
   

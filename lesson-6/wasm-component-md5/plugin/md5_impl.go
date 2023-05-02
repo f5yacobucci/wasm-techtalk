@@ -33,7 +33,7 @@ func init() {
 	md5.SetMd5(impl)
 }
 
-func (m md5Impl) Init() md5.Md5Context {
+func (m md5Impl) Init() md5.Result[md5.Md5Context, md5.Md5Errno] {
 	ctx := md5.Md5Context{
 		Bytes:  initBytes,
 		A:      initA,
@@ -43,10 +43,13 @@ func (m md5Impl) Init() md5.Md5Context {
 		Buffer: make([]uint8, lenBuf),
 	}
 
-	return ctx
+	return md5.Result[md5.Md5Context, md5.Md5Errno]{
+		Kind: md5.Ok,
+		Val: ctx,
+	}
 }
 
-func (m md5Impl) Update(ctx md5.Md5Context, msg []byte) int32 {
+func (m md5Impl) Update(ctx md5.Md5Context, msg []byte) md5.Result[md5.Md5Context, md5.Md5Errno] {
 	size := uint64(len(msg))
 	used := ctx.Bytes & 0x3f
 	ctx.Bytes += size
@@ -56,27 +59,33 @@ func (m md5Impl) Update(ctx md5.Md5Context, msg []byte) int32 {
 
 		if size < free {
 			copy(ctx.Buffer[used:], msg)
-			return 0
+			return md5.Result[md5.Md5Context, md5.Md5Errno]{
+				Kind: md5.Ok,
+				Val: ctx,
+			}
 		}
 
 		copy(ctx.Buffer[used:], msg)
 		msg = msg[free:]
 		size -= free
-		md5Body(ctx, ctx.Buffer, lenBuf)
+		md5Body(&ctx, ctx.Buffer, lenBuf)
 	}
 
 	if size >= lenBuf {
 		s := size & ^(uint64(0x3f))
-		msg = md5Body(ctx, msg, s)
+		msg = md5Body(&ctx, msg, s)
 		size &= 0x3f
 	}
 
 	copy(ctx.Buffer, msg)
 
-	return 0
+	return md5.Result[md5.Md5Context, md5.Md5Errno]{
+		Kind: md5.Ok,
+		Val: ctx,
+	}
 }
 
-func (m md5Impl) Final(ctx md5.Md5Context) []byte {
+func (m md5Impl) Hash(ctx md5.Md5Context) md5.Result[[]uint8, md5.Md5Errno] {
 	used := ctx.Bytes & 0x3f
 	tmp := [1 + 63 + 8]byte{0x80}
 	pad := (55 - ctx.Bytes) % lenBuf
@@ -93,7 +102,7 @@ func (m md5Impl) Final(ctx md5.Md5Context) []byte {
 	ctx.Buffer[62] = byte(ctx.Bytes >> 48)
 	ctx.Buffer[63] = byte(ctx.Bytes >> 56)
 
-	md5Body(ctx, ctx.Buffer, lenBuf)
+	md5Body(&ctx, ctx.Buffer, lenBuf)
 
 	result := make([]byte, 16)
 	result[0] = byte(ctx.A)
@@ -113,7 +122,10 @@ func (m md5Impl) Final(ctx md5.Md5Context) []byte {
 	result[14] = byte(ctx.D >> 16)
 	result[15] = byte(ctx.D >> 24)
 
-	return result
+	return md5.Result[[]uint8, md5.Md5Errno]{
+		Kind: md5.Ok,
+		Val: result,
+	}
 }
 
 type md5Func func(uint32, uint32, uint32) uint32
@@ -144,7 +156,7 @@ func _GET(p []byte, n int) uint32 {
 	return binary.LittleEndian.Uint32(p[n*4:])
 }
 
-func md5Body(ctx md5.Md5Context, data []byte, size uint64) []byte {
+func md5Body(ctx *md5.Md5Context, data []byte, size uint64) []byte {
 	var saved_a, saved_b, saved_c, saved_d uint32
 
 	a := ctx.A
